@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🎌 唔行到跛都要買到跛</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Shippori+Mincho:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1c1a18; --paper:#f5f1ea; --paper2:#e8e2d8;
+  --forest:#2d4a3e; --forest2:#3d6354; --forest-light:#5a8a72;
+  --peak:#7a5c48; --gold:#b8882e; --gold-light:#e8c96a;
+  --mist:#7a8f99; --snow:#f4f0e8; --danger:#b83232;
+  --sky:#4a7a9b; --amber:#c07820; --nav-h:62px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;}
+body{background:var(--paper);color:var(--ink);font-family:'Noto Serif TC',serif;min-height:100%;padding-bottom:var(--nav-h);}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);
+  background:var(--forest);display:flex;align-items:stretch;
+  z-index:300;border-top:1px solid rgba(255,255,255,.08);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:none;border:none;border-right:1px solid rgba(255,255,255,.05);
+  color:rgba(244,240,232,.4);cursor:pointer;padding:0 1px;
+  font-size:.5rem;font-family:'DM Mono',monospace;letter-spacing:.3px;text-transform:uppercase;
+  transition:color .2s;
+}
+.nav-btn:last-child{border-right:none;}
+.nav-btn .ni{font-size:1rem;line-height:1;}
+.nav-btn.active{color:var(--gold-light);}
+.nav-btn.active .ni{filter:drop-shadow(0 0 5px rgba(232,201,106,.5));}
+
+/* ── PAGES ── */
+.page{display:none;} .page.active{display:block;}
+.inner{max-width:600px;margin:0 auto;padding:14px 12px 24px;}
+
+/* ── TOAST ── */
+.flash{
+  position:fixed;bottom:calc(var(--nav-h) + 10px);left:50%;
+  transform:translateX(-50%) translateY(50px);
+  background:var(--forest);color:var(--snow);padding:8px 20px;
+  border-radius:30px;font-size:.78rem;z-index:400;
+  box-shadow:0 4px 14px rgba(0,0,0,.22);
+  transition:transform .3s cubic-bezier(.175,.885,.32,1.275),opacity .3s;
+  opacity:0;pointer-events:none;
+}
+.flash.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ════════════════════════════════
+   SHARED COMPONENTS
+════════════════════════════════ */
+.page-hero{
+  background:var(--forest);color:var(--snow);
+  padding:22px 16px 16px;text-align:center;
+}
+.page-hero-tag{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--gold-light);text-transform:uppercase;margin-bottom:4px;}
+.page-hero h2{font-family:'Shippori Mincho',serif;font-size:1.1rem;font-weight:700;}
+
+.sec-label{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--mist);margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--paper2);}
+
+/* Day card */
+.day-card{background:#fff;border-radius:8px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.day-head{background:var(--forest);color:var(--snow);padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.day-tag{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--gold-light);letter-spacing:1px;}
+.day-name{font-size:.88rem;font-weight:500;margin-top:2px;}
+.day-stats{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;}
+.ds{font-family:'DM Mono',monospace;font-size:.56rem;background:rgba(255,255,255,.08);border-radius:3px;padding:2px 5px;color:rgba(244,240,232,.8);}
+.ds.up{color:#90e0a0;}.ds.dn{color:#f0a090;}
+.day-body{padding:12px 14px;}
+
+/* Timeline */
+.tl{padding-left:18px;position:relative;}
+.tl::before{content:'';position:absolute;left:5px;top:5px;bottom:5px;width:1px;background:linear-gradient(var(--forest-light),var(--paper2));}
+.tl-item{position:relative;margin-bottom:13px;}
+.tl-item:last-child{margin-bottom:0;}
+.tl-dot{position:absolute;left:-15px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--forest-light);border:2px solid #fff;box-shadow:0 0 0 1px var(--forest-light);}
+.tl-dot.g{background:var(--gold);box-shadow:0 0 0 1px var(--gold);}
+.tl-dot.r{background:var(--danger);box-shadow:0 0 0 1px var(--danger);}
+.tl-time{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mist);margin-bottom:1px;}
+.tl-name{font-size:.84rem;font-weight:500;color:var(--ink);}
+.tl-note{font-size:.73rem;color:#666;margin-top:2px;line-height:1.5;}
+.map-btn{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:.68rem;color:#fff;background:var(--forest2);text-decoration:none;padding:3px 10px;border-radius:4px;transition:background .2s;}
+.map-btn:hover{background:var(--forest);}
+.book-btn{display:inline-flex;align-items:center;gap:4px;margin-top:4px;margin-left:4px;font-size:.68rem;color:var(--gold);border:1px solid var(--gold);text-decoration:none;padding:3px 10px;border-radius:4px;transition:all .2s;}
+.book-btn:hover{background:var(--gold);color:#fff;}
+
+/* Info box */
+.ibox{background:var(--paper);border-left:3px solid var(--forest-light);border-radius:0 6px 6px 0;padding:9px 12px;margin-top:10px;font-size:.76rem;line-height:1.6;}
+.ibox.gold{border-left-color:var(--gold);}
+.ibox.red{border-left-color:var(--danger);}
+.ibox-t{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:1px;color:var(--mist);text-transform:uppercase;margin-bottom:4px;}
+.badge{display:inline-block;font-size:.58rem;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:3px;margin-left:2px;vertical-align:middle;}
+.b-ok{background:#e8f5e9;color:#2e7d32;}
+.b-wait{background:#fff3e0;color:#c07000;}
+
+/* Cost table */
+.cost-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--paper2);font-size:.76rem;}
+.cost-row:last-child{border:none;}
+.cost-total{display:flex;justify-content:space-between;padding:7px 0 0;font-weight:700;font-size:.84rem;color:var(--forest);border-top:1px solid var(--forest-light);margin-top:4px;}
+
+/* Warning */
+.warn{background:#fdf6e3;border:1px solid #e8c96a;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:.74rem;line-height:1.6;color:#5a4000;}
+.warn b{color:var(--amber);}
+
+/* Retreat */
+.retreat{background:#fff8f0;border:1px solid #e8b060;border-radius:6px;padding:9px 12px;margin-top:9px;font-size:.73rem;line-height:1.6;color:#5a3000;}
+
+/* Transport card */
+.tc{background:#fff;border-radius:8px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);display:flex;gap:12px;}
+.tc-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px;}
+.tc-body{flex:1;}
+.tc-route{font-size:.84rem;font-weight:500;margin-bottom:3px;}
+.tc-meta{font-size:.7rem;color:#666;line-height:1.6;}
+.tc-cost{font-family:'DM Mono',monospace;font-size:.73rem;color:var(--gold);font-weight:500;flex-shrink:0;text-align:right;}
+
+/* Hotel card */
+.hc{background:#fff;border-radius:8px;padding:13px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);border-top:3px solid var(--forest-light);}
+.hc.peak{border-top-color:var(--peak);}
+.hc-night{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mist);letter-spacing:1px;margin-bottom:3px;}
+.hc-name{font-size:.93rem;font-weight:600;color:var(--forest);margin-bottom:5px;}
+.hc-detail{font-size:.74rem;color:#555;line-height:1.7;}
+.hc-price{margin-top:6px;font-family:'DM Mono',monospace;font-size:.78rem;color:var(--gold);font-weight:500;}
+
+/* Link grid */
+.link-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.link-card{display:flex;align-items:center;gap:8px;background:#fff;border-radius:7px;padding:10px 12px;text-decoration:none;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.05);font-size:.76rem;font-weight:500;border-left:3px solid var(--forest-light);transition:transform .15s,box-shadow .15s;}
+.link-card:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.08);}
+.link-card .lc-icon{font-size:1.2rem;flex-shrink:0;}
+.link-card .lc-text{line-height:1.3;}
+.link-card .lc-sub{font-size:.6rem;color:var(--mist);font-weight:400;}
+.link-card.gold-l{border-left-color:var(--gold);}
+.link-card.red-l{border-left-color:var(--danger);}
+.link-card.sky-l{border-left-color:var(--sky);}
+
+/* Map link list */
+.map-link-list{display:flex;flex-direction:column;gap:6px;}
+.map-link-item{display:flex;align-items:center;gap:10px;background:#fff;border-radius:6px;padding:9px 12px;text-decoration:none;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.04);font-size:.78rem;transition:background .15s;}
+.map-link-item:hover{background:var(--paper2);}
+.mli-icon{font-size:1rem;flex-shrink:0;}
+.mli-name{flex:1;font-weight:500;}
+.mli-arrow{color:var(--mist);font-size:.7rem;}
+
+/* Budget card */
+.budget-card{background:#fff;border-radius:8px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.budget-card-title{font-size:.78rem;font-weight:600;color:var(--forest);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--paper2);}
+
+/* Parking */
+.park-card{background:#fff;border-radius:6px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;align-items:center;gap:10px;}
+.park-card a{flex:1;color:var(--sky);text-decoration:none;font-size:.78rem;}
+
+/* ── GEAR (English) ── */
+.gear-section{background:#fff;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.gear-toggle{width:100%;background:none;border:none;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;font-family:'Noto Serif TC',serif;font-size:.84rem;font-weight:500;color:var(--forest);border-bottom:1px solid var(--paper2);}
+.gear-toggle .gt-left{display:flex;align-items:center;gap:8px;}
+.gear-toggle .gt-arrow{font-size:.72rem;color:var(--mist);transition:transform .25s;}
+.gear-toggle.open .gt-arrow{transform:rotate(180deg);}
+.gear-toggle .gt-count{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mist);background:var(--paper);padding:1px 6px;border-radius:10px;}
+.gear-body{display:none;padding:4px 0;}
+.gear-body.open{display:block;}
+.gear-item{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--paper);font-size:.78rem;color:#444;}
+.gear-item:last-child{border-bottom:none;}
+.gear-item input[type=checkbox]{accent-color:var(--forest);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
+.gear-item label{flex:1;cursor:pointer;line-height:1.4;}
+.gear-item.checked-item label{text-decoration:line-through;color:#bbb;}
+.must-tag{font-size:.58rem;color:var(--danger);margin-left:3px;vertical-align:middle;}
+
+/* ── TODO (English) ── */
+.todo-group{margin-bottom:16px;}
+.todo-g-title{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--mist);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--paper2);}
+.todo-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper);font-size:.78rem;}
+.todo-item:last-child{border-bottom:none;}
+.todo-item input[type=checkbox]{accent-color:var(--forest);width:16px;height:16px;flex-shrink:0;margin-top:2px;cursor:pointer;}
+.todo-item label{flex:1;cursor:pointer;line-height:1.5;color:#333;}
+.todo-item label a{color:var(--sky);text-decoration:none;}
+.todo-dead{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--danger);flex-shrink:0;margin-top:3px;white-space:nowrap;}
+.todo-item.done label{text-decoration:line-through;color:#bbb;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     HIKING PAGE
+══════════════════════════════════ -->
+<div id="page-hiking" class="page active">
+<div class="page-hero">
+  <div class="page-hero-tag">⛰️ 行山行程</div>
+  <h2>表銀座縱走＋穗高連峰</h2>
+</div>
+<div class="inner">
+<div class="warn">⚠️ <b>注意：</b>10月初氣溫接近 0°C，需注意高山症同天氣變化。大切戶（D4）雨天必須留守。</div>
+
+<!-- D0 -->
+<div class="sec-label">10月4日（六）· D0 · 東京 → 松本</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 4 · D0</div><div class="day-name">東京 → 松本</div></div>
+    <div class="day-stats"><span class="ds">🚅 移動日</span><span class="ds">👥 6人</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">08:00 – 09:00</div><div class="tl-name">新宿出發（あずさ特急）</div><div class="tl-note">あずさ5號 → 松本 10:23着</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">10:30</div><div class="tl-name">松本 Check in</div><a class="map-btn" href="https://maps.app.goo.gl/yZGVSLqpTocyyVwK7" target="_blank">📍 Hotel（已訂）</a></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">11:00 – 17:00</div><div class="tl-name">松本城</div><a class="map-btn" href="https://maps.app.goo.gl/WUuUTC8ojuVknmKM9" target="_blank">📍 地圖</a></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">17:00 – 19:00</div><div class="tl-name">採購補給（7-Eleven / 好日山荘）</div></div>
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">19:00</div><div class="tl-name">晚餐 · 早休</div><a class="map-btn" href="https://maps.app.goo.gl/HY3NNiKQTo88k8C46" target="_blank">📍 榑木野（蕎麥麵）</a></div>
+    </div>
+    <div class="ibox gold"><div class="ibox-t">🏨 住宿</div>松本市內 <span class="badge b-ok">✓ 已訂</span></div>
+  </div>
+</div>
+
+<!-- D1 -->
+<div class="sec-label">10月5日（日）· D1 · 中房溫泉 → 燕山莊</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 5 · D1</div><div class="day-name">中房溫泉 → 燕山莊</div></div>
+    <div class="day-stats"><span class="ds">📏 5.5km</span><span class="ds">⏱ 5h</span><span class="ds up">↑+1,250m</span><span class="ds dn">↓-40m</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">05:30</div><div class="tl-name">松本 → 穗高（大糸線）</div><div class="tl-note">約30分 · ¥330/人</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">06:00 – 07:00</div><div class="tl-name">穗高 → 中房溫泉（巴士）</div><div class="tl-note">約1小時 · ¥1,400/人 · 必須預訂！</div></div>
+      <div class="tl-item"><div class="tl-dot r"></div><div class="tl-time">07:30</div><div class="tl-name">中房溫泉 登山口（1,462m）</div><a class="map-btn" href="https://maps.app.goo.gl/D13SRnm8GctiSqZs5" target="_blank">📍 登山口</a></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">11:30</div><div class="tl-name">合戰小屋（2,467m）🍉</div><div class="tl-note">名物西瓜，必食！</div></div>
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">13:00 – 14:00</div><div class="tl-name">燕山莊（2,712m）✓</div><a class="map-btn" href="https://maps.app.goo.gl/GaJk1W86oC2kfhvq5" target="_blank">📍 燕山莊</a></div>
+    </div>
+    <div class="ibox gold"><div class="ibox-t">🏨 燕山莊 · ¥16,000/人（一泊二食）</div><span class="badge b-ok">✓ 已訂</span></div>
+    <div class="ibox"><div class="ibox-t">💴 今日預算/人</div>
+      <div class="cost-row"><span>大糸線</span><span>¥330</span></div>
+      <div class="cost-row"><span>巴士</span><span>¥1,400</span></div>
+      <div class="cost-row"><span>合戰小屋西瓜🍉</span><span>¥700</span></div>
+      <div class="cost-row"><span>燕山莊（一泊二食）</span><span>¥16,000</span></div>
+      <div class="cost-total"><span>今日合計</span><span>≈ ¥18,430</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- D2 -->
+<div class="sec-label">10月6日（一）· D2 · 燕山莊 → 西岳小屋</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 6 · D2</div><div class="day-name">燕山莊 → 大天井岳 → 西岳小屋</div></div>
+    <div class="day-stats"><span class="ds">📏 10.5km</span><span class="ds">⏱ 8h</span><span class="ds up">↑+710m</span><span class="ds dn">↓-720m</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">05:00</div><div class="tl-name">日出 + 早餐</div></div>
+      <div class="tl-item"><div class="tl-dot r"></div><div class="tl-time">06:00</div><div class="tl-name">表銀座縱走開始</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">09:00</div><div class="tl-name">大天井岳（2,922m）</div><a class="map-btn" href="https://maps.app.goo.gl/aaQnbxjpRGmtcJiF7" target="_blank">📍 地圖</a></div>
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">14:00 – 15:00</div><div class="tl-name">西岳小屋（2,758m）✓</div><a class="map-btn" href="https://maps.app.goo.gl/GwPbbae6FHP5PGC6A" target="_blank">📍 西岳</a><a class="book-btn" href="https://enzanso-reservation.jp/reserve/enz0010s.php?p=60&type=10" target="_blank">⚜️ 預約</a></div>
+    </div>
+    <div class="ibox gold"><div class="ibox-t">🏨 西岳小屋 · ¥16,000/人（一泊二食）</div><span class="badge b-wait">⏰ 本月18號訂！</span></div>
+    <div class="ibox"><div class="ibox-t">💴 今日預算/人</div>
+      <div class="cost-row"><span>西岳小屋（一泊二食）</span><span>¥16,000</span></div>
+      <div class="cost-row"><span>行動糧/飲料</span><span>¥500</span></div>
+      <div class="cost-total"><span>今日合計</span><span>≈ ¥16,500</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- D3 -->
+<div class="sec-label">10月7日（二）· D3 · 西岳 → 槍岳攻頂 🏔️</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 7 · D3</div><div class="day-name">西岳 → 水俁乗越 → 槍岳</div></div>
+    <div class="day-stats"><span class="ds">📏 5.5km</span><span class="ds">⏱ 6h</span><span class="ds up">↑+880m</span><span class="ds dn">↓-450m</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">05:30</div><div class="tl-name">早餐 + 出發</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">07:00 – 08:00</div><div class="tl-name">水俁乗越（2,469m）</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">11:00</div><div class="tl-name">槍岳山莊（3,080m）</div><a class="map-btn" href="https://maps.app.goo.gl/Y2KF9jGmVutxhp4u6" target="_blank">📍 地圖</a><a class="book-btn" href="https://www.yarigatake.net/reservation/yarigatake/" target="_blank">⚜️ 預約</a></div>
+      <div class="tl-item"><div class="tl-dot r"></div><div class="tl-time">12:00 – 14:00</div><div class="tl-name">槍岳攻頂 ⛏️（3,180m）</div><div class="tl-note">最後100m垂直岩壁，手腳並用。頂部只容4–5人。</div></div>
+    </div>
+    <div class="ibox gold"><div class="ibox-t">🏨 槍岳山莊 · ¥16,000/人（一泊二食）</div><span class="badge b-wait">⏰ 9月7日 09:00 JST</span><br>TEL: <a href="tel:09026411911">090-2641-1911</a></div>
+    <div class="ibox"><div class="ibox-t">💴 今日預算/人</div>
+      <div class="cost-row"><span>槍岳山莊（一泊二食）</span><span>¥16,000</span></div>
+      <div class="cost-row"><span>行動糧/飲料</span><span>¥500</span></div>
+      <div class="cost-total"><span>今日合計</span><span>≈ ¥16,500</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- D4 -->
+<div class="sec-label">10月8日（三）· D4 · 大切戶 ⚠️</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 8 · D4</div><div class="day-name">槍岳 → 大切戶 → 北穗高 ⚠️</div></div>
+    <div class="day-stats"><span class="ds">📏 6.5km</span><span class="ds">⏱ 9h</span><span class="ds up">↑+920m</span><span class="ds dn">↓-950m</span></div>
+  </div>
+  <div class="day-body">
+    <div class="warn">⚠️ <b>大切戶係全程最危險段！</b>垂直岩壁、鎖鍊場多。雨天或視野差必須留守，唔好強行出發。</div>
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">05:00</div><div class="tl-name">早餐 + 確認天氣</div><div class="tl-note">惡劣天氣 = 留守槍岳山莊</div></div>
+      <div class="tl-item"><div class="tl-dot r"></div><div class="tl-time">06:00 – 15:00</div><div class="tl-name">大切戶縱走（大槍）</div><div class="tl-note">全程需集中精神。</div></div>
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">14:00 – 16:00</div><div class="tl-name">北穗高小屋（3,100m）✓</div><a class="map-btn" href="https://maps.app.goo.gl/tg35urgNZ3Vmq59z9" target="_blank">📍 地圖</a><a class="book-btn" href="https://www.kitaho.co.jp/booking" target="_blank">⚜️ 預約</a></div>
+    </div>
+    <div class="retreat"><b>撤退備案（D4）：</b>天氣唔好 → 下切上高地 → 返回松本</div>
+    <div class="ibox gold"><div class="ibox-t">🏨 北穗高小屋 · ¥15,500/人（一泊二食）</div><span class="badge b-wait">⏰ 9月8日 Phone in</span><br>TEL: <a href="tel:09014228886">090-1422-8886</a>（07:00–19:00 JST）</div>
+    <div class="ibox"><div class="ibox-t">💴 今日預算/人</div>
+      <div class="cost-row"><span>北穗高小屋（一泊二食）</span><span>¥15,500</span></div>
+      <div class="cost-row"><span>行動糧/飲料</span><span>¥600</span></div>
+      <div class="cost-total"><span>今日合計</span><span>≈ ¥16,100</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- D5 -->
+<div class="sec-label">10月9日（四）· D5 · 奧穗高 → 涸澤 🍁</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 9 · D5</div><div class="day-name">北穗高 → 奧穗高 → 涸澤</div></div>
+    <div class="day-stats"><span class="ds">📏 5.5km</span><span class="ds">⏱ 8h</span><span class="ds up">↑+650m</span><span class="ds dn">↓-1,200m</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">05:30</div><div class="tl-name">早餐 + 出發</div></div>
+      <div class="tl-item"><div class="tl-dot r"></div><div class="tl-time">09:00 – 10:00</div><div class="tl-name">奧穗高岳攻頂 🏆（3,190m）</div><div class="tl-note">日本第三高峰！10月初可能有初雪，帶冰爪。</div><a class="map-btn" href="https://maps.app.goo.gl/TQ7jdV6xMSpBqgZk9" target="_blank">📍 地圖</a></div>
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">13:00 – 14:00</div><div class="tl-name">涸澤小屋（2,350m）🍁</div><a class="map-btn" href="https://maps.app.goo.gl/NWN7FYzrjjT3XAZw7" target="_blank">📍 涸澤</a></div>
+    </div>
+    <div class="ibox gold"><div class="ibox-t">🏨 涸澤小屋 · ¥16,000/人（一泊二食）</div><span class="badge b-wait">⏰ 9月9日 08:00 JST Phone in</span><br>TEL: <a href="tel:09022041300">090-2204-1300</a>（08:00–19:00 JST）<br>〒390-1516 長野県松本市安曇上高地 4469-1</div>
+    <div class="ibox"><div class="ibox-t">💴 今日預算/人</div>
+      <div class="cost-row"><span>涸澤小屋（一泊二食）</span><span>¥16,000</span></div>
+      <div class="cost-row"><span>行動糧/飲料</span><span>¥500</span></div>
+      <div class="cost-total"><span>今日合計</span><span>≈ ¥16,500</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- D6 -->
+<div class="sec-label">10月10日（五）· D6 · 下山 → 上高地 🎉</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 10 · D6</div><div class="day-name">涸澤 → 橫尾 → 德澤 → 上高地</div></div>
+    <div class="day-stats"><span class="ds">📏 15km</span><span class="ds">⏱ 6h</span><span class="ds up">↑+50m</span><span class="ds dn">↓-800m</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">06:00</div><div class="tl-name">早餐 + 出發</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">10:30</div><div class="tl-name">德澤</div><a class="map-btn" href="https://maps.app.goo.gl/WPwBeGYtnMWrQe4a6" target="_blank">📍 德澤</a></div>
+      <div class="tl-item"><div class="tl-dot r"></div><div class="tl-time">13:00</div><div class="tl-name">上高地 完走 🎊</div><a class="map-btn" href="https://maps.app.goo.gl/HnUGGDNLUuazvwrn6" target="_blank">📍 上高地</a></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">16:00 – 18:00</div><div class="tl-name">上高地 → 松本（阿爾卑斯號巴士）</div><div class="tl-note">約1.5h · ¥2,700/人</div></div>
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">18:00 onwards</div><div class="tl-name">松本 · 慶功晚餐 🍺</div><a class="map-btn" href="https://maps.app.goo.gl/fS51UockJEUuvvRT6" target="_blank">📍 麵屋 瑞風</a></div>
+    </div>
+    <div class="ibox"><div class="ibox-t">💴 今日預算/人</div>
+      <div class="cost-row"><span>上高地→松本 巴士</span><span>¥2,700</span></div>
+      <div class="cost-row"><span>德澤咖哩飯</span><span>¥1,200</span></div>
+      <div class="cost-row"><span>慶功晚餐</span><span>¥3,000</span></div>
+      <div class="cost-row"><span>松本住宿（待定）</span><span>¥5,000〜</span></div>
+      <div class="cost-total"><span>今日合計</span><span>≈ ¥11,900+</span></div>
+    </div>
+  </div>
+</div>
+</div><!-- /inner -->
+</div><!-- /page-hiking -->
+
+<!-- ══════════════════════════════════
+     ROAD TRIP PAGE
+══════════════════════════════════ -->
+<div id="page-roadtrip" class="page">
+<div class="page-hero">
+  <div class="page-hero-tag">🚗 落山後行程</div>
+  <h2>松本 → 河口湖 → 熱海 → 靜岡/伊豆 → 箱根 → 河口湖</h2>
+</div>
+<div class="inner">
+
+<div class="sec-label">10月11日（六）· 松本 → 河口湖</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 11</div><div class="day-name">松本 → 河口湖</div></div>
+    <div class="day-stats"><span class="ds">👥 7人（第7人加入）</span><span class="ds">🚗 取車日</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">上午</div><div class="tl-name">松本 取車（7人座）</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">中午</div><div class="tl-name">出發 → 河口湖（約2.5h）</div></div>
+      <div class="tl-item"><div class="tl-dot r"></div><div class="tl-time">下午</div><div class="tl-name">第7人 · 河口湖匯合 🎉</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">下午</div><div class="tl-name">新倉山淺間公園</div><a class="map-btn" href="https://maps.app.goo.gl/GaJk1W86oC2kfhvq5" target="_blank">📍 地圖</a></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">下午</div><div class="tl-name">大石公園 / 西湖 / 本栖湖</div>
+        <a class="map-btn" href="https://maps.app.goo.gl/aaQnbxjpRGmtcJiF7" target="_blank">📍 大石公園</a>
+        <a class="map-btn" style="margin-left:4px;" href="https://maps.app.goo.gl/GwPbbae6FHP5PGC6A" target="_blank">📍 西湖</a>
+        <a class="map-btn" style="margin-left:4px;" href="https://maps.app.goo.gl/Y2KF9jGmVutxhp4u6" target="_blank">📍 本栖湖</a>
+      </div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">下午</div><div class="tl-name">山中湖平野之濱</div><a class="map-btn" href="https://maps.app.goo.gl/tg35urgNZ3Vmq59z9" target="_blank">📍 地圖</a></div>
+    </div>
+    <div class="ibox gold"><div class="ibox-t">🏨 河口湖住宿（待定）</div><span class="badge b-wait">待訂</span> 湖邊旅館 · ¥8,000〜15,000/人</div>
+  </div>
+</div>
+
+<div class="sec-label">10月12日（日）· 河口湖 → 熱海花火 🎆</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 12</div><div class="day-name">河口湖 → 熱海 🎆 → 靜岡/伊豆</div></div>
+    <div class="day-stats"><span class="ds">👥 7人</span><span class="ds">🎆 熱海花火大會！</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">上午</div><div class="tl-name">御殿場 Premium Outlets（可選）</div><a class="map-btn" href="https://maps.app.goo.gl/TQ7jdV6xMSpBqgZk9" target="_blank">📍 Outlets</a></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">下午</div><div class="tl-name">熱海 · 來宮神社 / 熱海梅園</div>
+        <a class="map-btn" href="https://maps.app.goo.gl/HnUGGDNLUuazvwrn6" target="_blank">📍 來宮神社</a>
+        <a class="map-btn" style="margin-left:4px;" href="https://maps.app.goo.gl/WPwBeGYtnMWrQe4a6" target="_blank">📍 熱海梅園</a>
+      </div>
+      <div class="tl-item"><div class="tl-dot r"></div><div class="tl-time">晚上</div><div class="tl-name">🎆 熱海花火大會</div><div class="tl-note">睇完花火後 → 靜岡或伊豆留宿</div></div>
+    </div>
+    <div class="ibox gold"><div class="ibox-t">🏨 靜岡 / 伊豆（花火後）</div><span class="badge b-wait">待定</span></div>
+  </div>
+</div>
+
+<div class="sec-label">10月13日（一）· 靜岡 → 浜松 → 箱根</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 13</div><div class="day-name">靜岡 → 浜松 → 箱根</div></div>
+    <div class="day-stats"><span class="ds">👥 7人</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">上午</div><div class="tl-name">駿府城公園 · 靜岡</div><a class="map-btn" href="https://maps.app.goo.gl/N9ynPaLhnL7wNAfw9" target="_blank">📍 駿府城</a><div class="tl-note">停車場：<a href="https://maps.app.goo.gl/2q47SFTqEVFXjupx5" target="_blank" style="color:var(--sky);">📍 地下停車場</a></div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">中午</div><div class="tl-name">浜松 · 秋葉神社（下社→上社）</div><div class="tl-note">由下社步行至上社。</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">下午午餐</div><div class="tl-name">炭焼きレストランさわやか（漢堡排）</div><a class="map-btn" href="https://maps.app.goo.gl/aoFuuD5v9iMjNPyx8" target="_blank">📍 地圖</a></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">途經</div><div class="tl-name">三島 Skywalk（可選）</div><a class="map-btn" href="https://maps.app.goo.gl/uLR57BVniocJx6mB7" target="_blank">📍 地圖</a></div>
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">晚上</div><div class="tl-name">箱根 Check in</div></div>
+    </div>
+    <div class="ibox gold"><div class="ibox-t">🏨 箱根温泉旅館（待定）</div><span class="badge b-wait">待訂</span> ¥10,000〜20,000/人</div>
+  </div>
+</div>
+
+<div class="sec-label">10月14日（二）· 箱根 → 河口湖 還車 🏁</div>
+<div class="day-card">
+  <div class="day-head">
+    <div><div class="day-tag">OCT 14</div><div class="day-name">箱根 → 河口湖 · 還車解散</div></div>
+    <div class="day-stats"><span class="ds">🏁 最後一日</span></div>
+  </div>
+  <div class="day-body">
+    <div class="tl">
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">上午</div><div class="tl-name">十國峠 · 箱根</div><a class="map-btn" href="https://maps.app.goo.gl/NWN7FYzrjjT3XAZw7" target="_blank">📍 十國峠</a></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">中午</div><div class="tl-name">箱根 → 河口湖（約1.5h）</div></div>
+      <div class="tl-item"><div class="tl-dot g"></div><div class="tl-time">下午</div><div class="tl-name">還車 · 解散 🎌</div><div class="tl-note">河口湖→東京 約1.5h</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-label">餐廳推薦</div>
+<div class="map-link-list">
+  <a class="map-link-item" href="https://maps.app.goo.gl/HY3NNiKQTo88k8C46" target="_blank"><span class="mli-icon">🍜</span><span class="mli-name">榑木野（松本蕎麥麵）</span><span class="mli-arrow">→</span></a>
+  <a class="map-link-item" href="https://maps.app.goo.gl/fS51UockJEUuvvRT6" target="_blank"><span class="mli-icon">🍜</span><span class="mli-name">麵屋 瑞風</span><span class="mli-arrow">→</span></a>
+  <a class="map-link-item" href="https://maps.app.goo.gl/JiZA3p8JggVp4G8s6" target="_blank"><span class="mli-icon">🍵</span><span class="mli-name">中村茶屋</span><span class="mli-arrow">→</span></a>
+  <a class="map-link-item" href="https://maps.app.goo.gl/8d8CL6CLtb3LXk6A9" target="_blank"><span class="mli-icon">🔥</span><span class="mli-name">山麓園（爐端燒）</span><span class="mli-arrow">→</span></a>
+  <a class="map-link-item" href="https://maps.app.goo.gl/w8MjovBR26RXtvGo9" target="_blank"><span class="mli-icon">🍜</span><span class="mli-name">新福菜館 本店</span><span class="mli-arrow">→</span></a>
+  <a class="map-link-item" href="https://maps.app.goo.gl/aoFuuD5v9iMjNPyx8" target="_blank"><span class="mli-icon">🍔</span><span class="mli-name">炭焼きさわやか（漢堡排）</span><span class="mli-arrow">→</span></a>
+  <a class="map-link-item" href="https://maps.app.goo.gl/F32ZS9mxCRguKjak8" target="_blank"><span class="mli-icon">🐟</span><span class="mli-name">石橋 鰻魚</span><span class="mli-arrow">→</span></a>
+  <a class="map-link-item" href="https://maps.app.goo.gl/1dQ4c5esBz4VXfrD6" target="_blank"><span class="mli-icon">🐟</span><span class="mli-name">中川屋（鰻魚飯）</span><span class="mli-arrow">→</span></a>
+  <a class="map-link-item" href="https://maps.app.goo.gl/bvA6KpsdRHnuP44BA" target="_blank"><span class="mli-icon">🐟</span><span class="mli-name">蓬萊軒（熱田蓬萊軒鰻魚飯）</span><span class="mli-arrow">→</span></a>
+</div>
+<div class="sec-label">停車場</div>
+<div class="park-card"><span>🅿️</span><a href="https://maps.app.goo.gl/bT79xukSnLnyY7pN6" target="_blank">昭和紀念公園 立川口停車場</a></div>
+<div class="park-card"><span>🅿️</span><a href="https://maps.app.goo.gl/SQWMYEhXtTuAgfcR6" target="_blank">淺間公園 臨時停車場</a></div>
+<div class="park-card"><span>🅿️</span><a href="https://maps.app.goo.gl/2q47SFTqEVFXjupx5" target="_blank">駿府城公園 地下停車場</a></div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     TRANSPORT PAGE
+══════════════════════════════════ -->
+<div id="page-transport" class="page">
+<div class="page-hero"><div class="page-hero-tag">🚌 交通</div><h2>交通總覽</h2></div>
+<div class="inner">
+<div class="sec-label">前往登山口</div>
+<div class="tc"><div class="tc-icon">🚅</div><div class="tc-body"><div class="tc-route">新宿 → 松本（あずさ特急）</div><div class="tc-meta">10月4日 · あずさ5號 dep 08:00 arr 10:23 · 約2.5h<br>建議預訂座位（富士山側 D/E 列）</div><a class="map-btn" href="https://www.jreast.co.jp/" target="_blank" style="margin-top:5px;">🔗 JR東日本</a></div><div class="tc-cost">¥4,340/人</div></div>
+<div class="tc"><div class="tc-icon">🚃</div><div class="tc-body"><div class="tc-route">松本 → 穗高（大糸線）</div><div class="tc-meta">10月5日 · dep ~05:30 · 約30分</div></div><div class="tc-cost">¥330/人</div></div>
+<div class="tc"><div class="tc-icon">🚌</div><div class="tc-body"><div class="tc-route">穗高 → 中房溫泉（巴士）</div><div class="tc-meta">10月5日 · dep 06:00〜07:00 · 約1h · 必須預訂！</div><a class="map-btn" href="https://www.alpico.co.jp/traffic/route_bus/" target="_blank" style="margin-top:5px;">🔗 巴士預訂</a></div><div class="tc-cost">¥1,400/人</div></div>
+<div class="tc"><div class="tc-icon">🚌</div><div class="tc-body"><div class="tc-route">上高地 → 松本（阿爾卑斯號）</div><div class="tc-meta">10月10日 · dep ~16:00 · 約1.5h</div><a class="map-btn" href="https://www.alpico.co.jp/traffic/express/kamikochi/" target="_blank" style="margin-top:5px;">🔗 阿爾卑斯號</a></div><div class="tc-cost">¥2,700/人</div></div>
+<div class="sec-label">落山後租車（10/11–14 · 4日）</div>
+<div class="tc"><div class="tc-icon">🚗</div><div class="tc-body"><div class="tc-route">7人座 Van · 松本出發</div><div class="tc-meta">建議 Toyota Alphard / Hiace · 記得訂 ETC 卡<br>路線：松本→河口湖→熱海→靜岡/伊豆→箱根→河口湖<br>預計總里程約 600–700km</div><a class="map-btn" href="https://rent.toyota.co.jp/sp/" target="_blank" style="margin-top:5px;">🔗 Toyota Rent a Car</a></div><div class="tc-cost">¥40,000〜<br>60,000 total<br><small style="color:#999">（÷7人）</small></div></div>
+<div class="sec-label">實用連結</div>
+<div class="link-grid">
+  <a class="link-card sky-l" href="https://idou.me" target="_blank"><span class="lc-icon">🚌</span><div class="lc-text">交通查詢<div class="lc-sub">idou.me</div></div></a>
+  <a class="link-card" href="https://cloak.ecbo.io/en" target="_blank"><span class="lc-icon">🧳</span><div class="lc-text">行李寄存<div class="lc-sub">ecbo cloak</div></div></a>
+  <a class="link-card gold-l" href="https://collabo-cafe.com" target="_blank"><span class="lc-icon">🪄</span><div class="lc-text">活動門票<div class="lc-sub">collabo-cafe</div></div></a>
+  <a class="link-card red-l" href="https://www.jalan.net" target="_blank"><span class="lc-icon">♨️</span><div class="lc-text">温泉搜尋<div class="lc-sub">jalan.net</div></div></a>
+  <a class="link-card" href="https://s.tabelog.com/?format=html" target="_blank"><span class="lc-icon">🍽️</span><div class="lc-text">餐廳搜尋<div class="lc-sub">Tabelog</div></div></a>
+  <a class="link-card" href="https://weathernews.jp/mountain/northernalps/40339/" target="_blank"><span class="lc-icon">⛅</span><div class="lc-text">山上天氣<div class="lc-sub">weathernews.jp</div></div></a>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     HOTEL PAGE
+══════════════════════════════════ -->
+<div id="page-hotel" class="page">
+<div class="page-hero"><div class="page-hero-tag">🏨 住宿</div><h2>住宿總覽</h2></div>
+<div class="inner">
+<div class="sec-label">行山前</div>
+<div class="hc"><div class="hc-night">OCT 4–5 · 松本</div><div class="hc-name">松本市內 Hotel</div><div class="hc-detail"><span class="badge b-ok">✓ 已訂</span> · 6人<br><a class="map-btn" href="https://maps.app.goo.gl/yZGVSLqpTocyyVwK7" target="_blank" style="margin-top:5px;">📍 地圖</a></div><div class="hc-price">¥5,000〜8,000/人</div></div>
+<div class="sec-label">山屋</div>
+<div class="hc peak"><div class="hc-night">OCT 5–6 · D1</div><div class="hc-name">燕山莊（2,712m）</div><div class="hc-detail"><span class="badge b-ok">✓ 已訂</span> · 含早晚餐</div><div class="hc-price">¥16,000/人</div></div>
+<div class="hc peak"><div class="hc-night">OCT 6–7 · D2</div><div class="hc-name">西岳小屋（2,758m）</div><div class="hc-detail"><span class="badge b-wait">⏰ 本月18號訂！</span> · 含早晚餐<br><a class="book-btn" href="https://enzanso-reservation.jp/reserve/enz0010s.php?p=60&type=10" target="_blank">⚜️ 網上預約</a></div><div class="hc-price">¥16,000/人</div></div>
+<div class="hc peak"><div class="hc-night">OCT 7–8 · D3</div><div class="hc-name">槍岳山莊（3,080m）</div><div class="hc-detail"><span class="badge b-wait">⏰ 9月7日 09:00 JST</span><br>TEL: <a href="tel:09026411911">090-2641-1911</a><br><a class="book-btn" href="https://www.yarigatake.net/reservation/yarigatake/" target="_blank">⚜️ 網上預約</a></div><div class="hc-price">¥16,000/人</div></div>
+<div class="hc peak"><div class="hc-night">OCT 8–9 · D4</div><div class="hc-name">北穗高小屋（3,100m）</div><div class="hc-detail"><span class="badge b-wait">⏰ 9月8日 Phone in</span><br>TEL: <a href="tel:09014228886">090-1422-8886</a>（07:00–19:00 JST）<br><a class="book-btn" href="https://www.kitaho.co.jp/booking" target="_blank">⚜️ 網上預約</a></div><div class="hc-price">¥15,500/人</div></div>
+<div class="hc peak"><div class="hc-night">OCT 9–10 · D5</div><div class="hc-name">涸澤小屋（2,350m）</div><div class="hc-detail"><span class="badge b-wait">⏰ 9月9日 08:00 JST Phone in</span><br>TEL: <a href="tel:09022041300">090-2204-1300</a>（08:00–19:00 JST）</div><div class="hc-price">¥16,000/人</div></div>
+<div class="sec-label">落山後</div>
+<div class="hc"><div class="hc-night">OCT 10–11 · 松本</div><div class="hc-name">松本市內（待定）</div><div class="hc-detail"><span class="badge b-wait">待訂</span> · 6人</div><div class="hc-price">¥5,000〜8,000/人</div></div>
+<div class="hc"><div class="hc-night">OCT 11–12 · 河口湖</div><div class="hc-name">湖邊旅館（待定）</div><div class="hc-detail"><span class="badge b-wait">待訂</span> · 7人<br><a class="map-btn" href="https://www.jalan.net" target="_blank" style="margin-top:5px;">🔗 搵 Jalan</a></div><div class="hc-price">¥8,000〜15,000/人</div></div>
+<div class="hc"><div class="hc-night">OCT 12–13 · 靜岡 / 伊豆</div><div class="hc-name">花火後住宿（待定）</div><div class="hc-detail"><span class="badge b-wait">待定</span> · 7人</div><div class="hc-price">¥8,000〜15,000/人</div></div>
+<div class="hc"><div class="hc-night">OCT 13–14 · 箱根</div><div class="hc-name">箱根温泉旅館（待定）</div><div class="hc-detail"><span class="badge b-wait">待訂</span> · 7人<br><a class="map-btn" href="https://www.jalan.net" target="_blank" style="margin-top:5px;">♨️ 搵温泉旅館</a></div><div class="hc-price">¥10,000〜20,000/人</div></div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     GEAR PAGE (English)
+══════════════════════════════════ -->
+<div id="page-gear" class="page">
+<div class="page-hero"><div class="page-hero-tag">🎒 Gear</div><h2>Packing List</h2></div>
+<div class="inner">
+<div class="warn">⚠️ Early Oct temps near 0°C at high elevation. Oct may see early snow on Okuhotaka. Pack for winter conditions. Bag: 45–60L.</div>
+<div class="gear-section">
+  <button class="gear-toggle" onclick="toggleGear(this)"><div class="gt-left">🥾 Footwear & Equipment</div><div style="display:flex;align-items:center;gap:6px;"><span class="gt-count">7 items</span><span class="gt-arrow">▼</span></div></button>
+  <div class="gear-body">
+    <div class="gear-item"><input type="checkbox" id="g1" onchange="saveGear()"><label for="g1">High-cut waterproof hiking boots <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g2" onchange="saveGear()"><label for="g2">Trekking poles (x2)</label></div>
+    <div class="gear-item"><input type="checkbox" id="g3" onchange="saveGear()"><label for="g3">Helmet — required for Daikiretto <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g4" onchange="saveGear()"><label for="g4">Crampons — Oct Okuhotaka may need <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g5" onchange="saveGear()"><label for="g5">45–60L hiking backpack</label></div>
+    <div class="gear-item"><input type="checkbox" id="g6" onchange="saveGear()"><label for="g6">Waterproof pack cover</label></div>
+    <div class="gear-item"><input type="checkbox" id="g7" onchange="saveGear()"><label for="g7">Dry bags (inner waterproofing)</label></div>
+  </div>
+</div>
+<div class="gear-section">
+  <button class="gear-toggle" onclick="toggleGear(this)"><div class="gt-left">🧥 Clothing</div><div style="display:flex;align-items:center;gap:6px;"><span class="gt-count">9 items</span><span class="gt-arrow">▼</span></div></button>
+  <div class="gear-body">
+    <div class="gear-item"><input type="checkbox" id="g8" onchange="saveGear()"><label for="g8">Down jacket <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g9" onchange="saveGear()"><label for="g9">Waterproof shell jacket <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g10" onchange="saveGear()"><label for="g10">Fleece mid-layer</label></div>
+    <div class="gear-item"><input type="checkbox" id="g11" onchange="saveGear()"><label for="g11">Moisture-wicking base layer (long sleeve) ×3</label></div>
+    <div class="gear-item"><input type="checkbox" id="g12" onchange="saveGear()"><label for="g12">Hiking pants ×2</label></div>
+    <div class="gear-item"><input type="checkbox" id="g13" onchange="saveGear()"><label for="g13">Warm gloves <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g14" onchange="saveGear()"><label for="g14">Beanie hat</label></div>
+    <div class="gear-item"><input type="checkbox" id="g15" onchange="saveGear()"><label for="g15">Hiking socks ×4 pairs</label></div>
+    <div class="gear-item"><input type="checkbox" id="g16" onchange="saveGear()"><label for="g16">Gaiters</label></div>
+  </div>
+</div>
+<div class="gear-section">
+  <button class="gear-toggle" onclick="toggleGear(this)"><div class="gt-left">🩺 Safety & Medical</div><div style="display:flex;align-items:center;gap:6px;"><span class="gt-count">7 items</span><span class="gt-arrow">▼</span></div></button>
+  <div class="gear-body">
+    <div class="gear-item"><input type="checkbox" id="g17" onchange="saveGear()"><label for="g17">Altitude sickness medication (Diamox) <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g18" onchange="saveGear()"><label for="g18">Headlamp + spare batteries <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g19" onchange="saveGear()"><label for="g19">First aid kit</label></div>
+    <div class="gear-item"><input type="checkbox" id="g20" onchange="saveGear()"><label for="g20">Painkillers / digestive medicine</label></div>
+    <div class="gear-item"><input type="checkbox" id="g21" onchange="saveGear()"><label for="g21">Insulated water bottle (min. 1L)</label></div>
+    <div class="gear-item"><input type="checkbox" id="g22" onchange="saveGear()"><label for="g22">Emergency contact card (Japanese)</label></div>
+    <div class="gear-item"><input type="checkbox" id="g23" onchange="saveGear()"><label for="g23">Emergency thermal blanket</label></div>
+  </div>
+</div>
+<div class="gear-section">
+  <button class="gear-toggle" onclick="toggleGear(this)"><div class="gt-left">📱 Electronics & Misc</div><div style="display:flex;align-items:center;gap:6px;"><span class="gt-count">9 items</span><span class="gt-arrow">▼</span></div></button>
+  <div class="gear-body">
+    <div class="gear-item"><input type="checkbox" id="g24" onchange="saveGear()"><label for="g24">Offline maps — YAMAP downloaded <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g25" onchange="saveGear()"><label for="g25">High-capacity power bank</label></div>
+    <div class="gear-item"><input type="checkbox" id="g26" onchange="saveGear()"><label for="g26">Camera / GoPro</label></div>
+    <div class="gear-item"><input type="checkbox" id="g27" onchange="saveGear()"><label for="g27">Earplugs (mountain huts)</label></div>
+    <div class="gear-item"><input type="checkbox" id="g28" onchange="saveGear()"><label for="g28">Eye mask (mountain huts)</label></div>
+    <div class="gear-item"><input type="checkbox" id="g29" onchange="saveGear()"><label for="g29">Trail food — 6 days' supply <span class="must-tag">⚠️</span></label></div>
+    <div class="gear-item"><input type="checkbox" id="g30" onchange="saveGear()"><label for="g30">Hut towel / personal hygiene</label></div>
+    <div class="gear-item"><input type="checkbox" id="g31" onchange="saveGear()"><label for="g31">Passport / wallet / cash</label></div>
+    <div class="gear-item"><input type="checkbox" id="g32" onchange="saveGear()"><label for="g32">Travel insurance (incl. mountain rescue) <span class="must-tag">⚠️</span></label></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     BUDGET PAGE
+══════════════════════════════════ -->
+<div id="page-budget" class="page">
+<div class="page-hero"><div class="page-hero-tag">💴 預算</div><h2>預算總覽（per person 估算）</h2></div>
+<div class="inner">
+<div class="budget-card">
+  <div class="budget-card-title">⛰️ 行山段（10/4–10）· 6人 · per person</div>
+  <div class="cost-row"><span>交通（東京↔松本↔登山口↔上高地↔松本）</span><span>¥8,770</span></div>
+  <div class="cost-row"><span>松本住宿（D0）</span><span>¥6,000</span></div>
+  <div class="cost-row"><span>燕山莊 D1</span><span>¥16,000</span></div>
+  <div class="cost-row"><span>西岳小屋 D2</span><span>¥16,000</span></div>
+  <div class="cost-row"><span>槍岳山莊 D3</span><span>¥16,000</span></div>
+  <div class="cost-row"><span>北穗高小屋 D4</span><span>¥15,500</span></div>
+  <div class="cost-row"><span>涸澤小屋 D5</span><span>¥16,000</span></div>
+  <div class="cost-row"><span>食物/行動糧/雜費</span><span>¥8,000</span></div>
+  <div class="cost-total"><span>行山段小計</span><span>≈ ¥102,270</span></div>
+</div>
+<div class="budget-card">
+  <div class="budget-card-title">🚗 落山後（10/11–14）· 7人 · per person</div>
+  <div class="cost-row"><span>租車（7人座4日，÷7人）</span><span>≈ ¥6,000〜9,000</span></div>
+  <div class="cost-row"><span>高速/停車費（÷7人）</span><span>≈ ¥3,000</span></div>
+  <div class="cost-row"><span>河口湖住宿</span><span>¥8,000〜15,000</span></div>
+  <div class="cost-row"><span>靜岡/伊豆住宿</span><span>¥8,000〜15,000</span></div>
+  <div class="cost-row"><span>箱根旅館</span><span>¥10,000〜20,000</span></div>
+  <div class="cost-row"><span>餐飲/景點/購物</span><span>¥15,000〜</span></div>
+  <div class="cost-total"><span>落山後小計</span><span>≈ ¥50,000〜62,000</span></div>
+</div>
+<div class="budget-card" style="border-top:3px solid var(--gold);">
+  <div class="budget-card-title">💰 總計（per person，不含機票）</div>
+  <div class="cost-row"><span>行山段</span><span>≈ ¥102,270</span></div>
+  <div class="cost-row"><span>落山後段</span><span>≈ ¥50,000〜62,000</span></div>
+  <div class="cost-total"><span>總計</span><span>≈ ¥150,000〜165,000</span></div>
+</div>
+<div class="warn" style="margin-top:4px;">💡 建議每人準備 ¥180,000（約HKD 9,000〜10,000）作緩衝。</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     TO DO PAGE (English)
+══════════════════════════════════ -->
+<div id="page-todo" class="page">
+<div class="page-hero"><div class="page-hero-tag">📋 To Do</div><h2>To Do List</h2></div>
+<div class="inner">
+<div class="todo-group">
+  <div class="todo-g-title">🔴 Urgent — Complete this month</div>
+  <div class="todo-item" id="ti-td1"><input type="checkbox" id="td1" onchange="saveTodo('td1')"><label for="td1">📞 <b>Nishidake Hut</b> — Book by this month 18th<br><small>6 pax · Oct 6–7 · ¥16,000/person</small><br><a href="https://enzanso-reservation.jp/reserve/enz0010s.php?p=60&type=10" target="_blank">🔗 Book online</a></label><div class="todo-dead">Month 18th</div></div>
+  <div class="todo-item" id="ti-td2"><input type="checkbox" id="td2" onchange="saveTodo('td2')"><label for="td2">🚌 <b>Nakabusa Onsen Bus</b> — Pre-book (Hotaka → Nakabusa)<br><small>Oct 5 · 6 pax</small><br><a href="https://www.alpico.co.jp/traffic/route_bus/" target="_blank">🔗 Reserve</a></label></div>
+</div>
+<div class="todo-group">
+  <div class="todo-g-title">🟡 Sep 7 — Hut booking day</div>
+  <div class="todo-item" id="ti-td3"><input type="checkbox" id="td3" onchange="saveTodo('td3')"><label for="td3">📞 <b>Yarigatake Sanso</b><br><small>Sep 7 · 09:00 JST · 6 pax · Oct 7–8 · ¥16,000/person</small><br>TEL: <a href="tel:09026411911">090-2641-1911</a> · <a href="https://www.yarigatake.net/reservation/yarigatake/" target="_blank">🔗 Online</a></label><div class="todo-dead">Sep 7 09:00</div></div>
+</div>
+<div class="todo-group">
+  <div class="todo-g-title">🟡 Sep 8–9 — Hut booking days</div>
+  <div class="todo-item" id="ti-td4"><input type="checkbox" id="td4" onchange="saveTodo('td4')"><label for="td4">📞 <b>Kitahotaka Hut</b> — Phone in<br><small>Sep 8 · 6 pax · Oct 8–9 · ¥15,500/person</small><br>TEL: <a href="tel:09014228886">090-1422-8886</a> (07:00–19:00 JST) · <a href="https://www.kitaho.co.jp/booking" target="_blank">🔗 Online</a></label><div class="todo-dead">Sep 8</div></div>
+  <div class="todo-item" id="ti-td5"><input type="checkbox" id="td5" onchange="saveTodo('td5')"><label for="td5">📞 <b>Karasawa Hut</b> — Phone in<br><small>Sep 9 · 08:00 JST · 6 pax · Oct 9–10 · ¥16,000/person</small><br>TEL: <a href="tel:09022041300">090-2204-1300</a> (08:00–19:00 JST)</label><div class="todo-dead">Sep 9 08:00</div></div>
+</div>
+<div class="todo-group">
+  <div class="todo-g-title">🟢 Post-hike arrangements</div>
+  <div class="todo-item" id="ti-td6"><input type="checkbox" id="td6" onchange="saveTodo('td6')"><label for="td6">🚗 Book 7-seater rental car (Matsumoto · Oct 11–14 · 4 days)<br><a href="https://rent.toyota.co.jp/sp/" target="_blank">🔗 Toyota Rent a Car</a></label></div>
+  <div class="todo-item" id="ti-td7"><input type="checkbox" id="td7" onchange="saveTodo('td7')"><label for="td7">🏨 Book Kawaguchiko hotel (Oct 11–12 · 7 pax)<br><a href="https://www.jalan.net" target="_blank">🔗 Jalan</a></label></div>
+  <div class="todo-item" id="ti-td8"><input type="checkbox" id="td8" onchange="saveTodo('td8')"><label for="td8">🏨 Book Shizuoka / Izu hotel (Oct 12–13 · 7 pax · after Atami fireworks)</label></div>
+  <div class="todo-item" id="ti-td9"><input type="checkbox" id="td9" onchange="saveTodo('td9')"><label for="td9">🏨 Book Hakone ryokan (Oct 13–14 · 7 pax)<br><a href="https://www.jalan.net" target="_blank">♨️ Jalan Onsen</a></label></div>
+  <div class="todo-item" id="ti-td10"><input type="checkbox" id="td10" onchange="saveTodo('td10')"><label for="td10">🏨 Book Matsumoto hotel after descent (Oct 10–11 · 6 pax)</label></div>
+</div>
+<div class="todo-group">
+  <div class="todo-g-title">🔵 Pre-trip prep</div>
+  <div class="todo-item" id="ti-td11"><input type="checkbox" id="td11" onchange="saveTodo('td11')"><label for="td11">📱 Download <b>YAMAP</b> offline maps (Omoro Ginza + Hotaka routes)</label></div>
+  <div class="todo-item" id="ti-td12"><input type="checkbox" id="td12" onchange="saveTodo('td12')"><label for="td12">💊 Get altitude sickness medication (Diamox) from doctor</label></div>
+  <div class="todo-item" id="ti-td13"><input type="checkbox" id="td13" onchange="saveTodo('td13')"><label for="td13">🚅 Buy Shinjuku → Matsumoto Azusa ticket (Oct 4)<br><a href="https://www.jreast.co.jp/" target="_blank">🔗 JR East</a></label></div>
+  <div class="todo-item" id="ti-td14"><input type="checkbox" id="td14" onchange="saveTodo('td14')"><label for="td14">🩺 Purchase travel insurance (incl. mountain rescue) <span class="must-tag">⚠️</span></label></div>
+  <div class="todo-item" id="ti-td15"><input type="checkbox" id="td15" onchange="saveTodo('td15')"><label for="td15">📝 Submit hiking plan (登山届) + notify emergency contacts</label></div>
+</div>
+<div class="sec-label" style="margin-top:8px;">Quick Links</div>
+<div class="link-grid">
+  <a class="link-card gold-l" href="https://rent.toyota.co.jp/sp/" target="_blank"><span class="lc-icon">🚗</span><div class="lc-text">Car Rental<div class="lc-sub">Toyota</div></div></a>
+  <a class="link-card sky-l" href="https://idou.me" target="_blank"><span class="lc-icon">🚌</span><div class="lc-text">Traffic Info<div class="lc-sub">idou.me</div></div></a>
+  <a class="link-card" href="https://cloak.ecbo.io/en" target="_blank"><span class="lc-icon">🧳</span><div class="lc-text">Luggage Storage<div class="lc-sub">ecbo cloak</div></div></a>
+  <a class="link-card" href="https://s.tabelog.com/?format=html" target="_blank"><span class="lc-icon">🍽️</span><div class="lc-text">Restaurants<div class="lc-sub">Tabelog</div></div></a>
+  <a class="link-card gold-l" href="https://collabo-cafe.com" target="_blank"><span class="lc-icon">🪄</span><div class="lc-text">Event Tickets<div class="lc-sub">collabo-cafe</div></div></a>
+  <a class="link-card red-l" href="https://www.jalan.net" target="_blank"><span class="lc-icon">♨️</span><div class="lc-text">Onsen<div class="lc-sub">jalan.net</div></div></a>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     BOTTOM NAV
+══════════════════════════════════ -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="switchPage('hiking',this)"><span class="ni">⛰️</span>Hiking</button>
+  <button class="nav-btn" onclick="switchPage('roadtrip',this)"><span class="ni">🚗</span>Road Trip</button>
+  <button class="nav-btn" onclick="switchPage('transport',this)"><span class="ni">🚌</span>Transport</button>
+  <button class="nav-btn" onclick="switchPage('hotel',this)"><span class="ni">🏨</span>Hotel</button>
+  <button class="nav-btn" onclick="switchPage('gear',this)"><span class="ni">🎒</span>Gear</button>
+  <button class="nav-btn" onclick="switchPage('budget',this)"><span class="ni">💴</span>Budget</button>
+  <button class="nav-btn" onclick="switchPage('todo',this)"><span class="ni">📋</span>To Do</button>
+</nav>
+
+<div id="flashToast" class="flash">✓ Saved</div>
+
+<script>
+window.onload = function() { loadTodo(); loadGear(); };
+function switchPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Gear collapsible
+function toggleGear(btn) {
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('open');
+}
+
+// Toast
+let toastTimer;
+function triggerFlash() {
+  const t = document.getElementById('flashToast');
+  clearTimeout(toastTimer);
+  t.classList.add('show');
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+// Todo
+function saveTodo(id) {
+  try {
+    const state = JSON.parse(localStorage.getItem('trip_todo_v3') || '{}');
+    const el = document.getElementById(id);
+    state[id] = el.checked;
+    localStorage.setItem('trip_todo_v3', JSON.stringify(state));
+    const row = document.getElementById('ti-' + id);
+    if(row) row.classList.toggle('done', el.checked);
+    triggerFlash();
+  } catch(e){}
+}
+function loadTodo() {
+  try {
+    const state = JSON.parse(localStorage.getItem('trip_todo_v3') || '{}');
+    Object.keys(state).forEach(id => {
+      const el = document.getElementById(id);
+      if(el){ el.checked = state[id]; const r = document.getElementById('ti-'+id); if(r) r.classList.toggle('done',state[id]); }
+    });
+  } catch(e){}
+}
+
+// Gear
+function saveGear() {
+  try {
+    const items = document.querySelectorAll('.gear-item input');
+    const state = Array.from(items).map(i => i.checked);
+    localStorage.setItem('trip_gear_v3', JSON.stringify(state));
+    items.forEach((el,i) => { const r = el.closest('.gear-item'); if(r) r.classList.toggle('checked-item', el.checked); });
+    triggerFlash();
+  } catch(e){}
+}
+function loadGear() {
+  try {
+    const state = JSON.parse(localStorage.getItem('trip_gear_v3') || '[]');
+    const items = document.querySelectorAll('.gear-item input');
+    items.forEach((el,i) => {
+      if(state[i]!==undefined){ el.checked=state[i]; const r=el.closest('.gear-item'); if(r) r.classList.toggle('checked-item',state[i]); }
+    });
+  } catch(e){}
+}
+
+window.onload = function() { loadTodo(); loadGear(); };
+</script>
+</body>
+</html>
